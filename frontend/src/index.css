@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gov-dark text-foreground;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-gov-navy/80 backdrop-blur-md border border-white/10 shadow-xl;
+  }
+  
+  .glass-card {
+    @apply bg-gov-card/90 backdrop-blur-sm border border-white/5 shadow-lg shadow-black/20 rounded-xl;
+  }
+}
+
+/* MapLibre overrides for dark theme */
+.maplibregl-popup-content {
+  @apply bg-gov-navy border border-white/20 text-white rounded-lg shadow-xl shadow-black/50 p-4;
+}
+
+.maplibregl-popup-tip {
+  @apply border-t-gov-navy;
+}
+
+.maplibregl-ctrl-group {
+  @apply bg-gov-navy/90 border border-white/10 !important;
+}
+
+.maplibregl-ctrl-group button {
+  @apply hover:bg-white/10 !important;
+}
+
+.maplibregl-ctrl-icon {
+  filter: invert(1);
+}

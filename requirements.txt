@@ -1,0 +1,48 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+pydantic
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+httpx
+requests
+
+# Data
+pandas
+numpy
+scipy
+
+# ML
+scikit-learn
+xgboost
+joblib
+shap
+
+# NLP
+# sentence-transformers  # Optional: heavy, uncomment if needed
+
+# DB drivers
+aiosqlite
+# psycopg2-binary  # Uncomment for PostgreSQL
+
+# Document processing
+pdfplumber
+Pillow
+
+# Reports
+reportlab
+
+# OpenAI
+openai
+
+# Dev/test
+pytest
+pytest-asyncio
+httpx
+python-dotenv
+
+# Monitoring
+rich
