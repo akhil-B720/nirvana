@@ -9,6 +9,7 @@ passlib[bcrypt]
 python-multipart
 httpx
 requests
+slowapi==0.1.9
 
 # Data
 pandas
