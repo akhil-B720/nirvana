@@ -14,13 +14,18 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.api import projects, risk, ml_endpoints, reality_gap, data_endpoints
+from backend.api import projects, risk, ml_endpoints, reality_gap, data_endpoints, auth, evidence
 
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 logger = logging.getLogger("nirvana.api")
 
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -44,6 +49,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS configuration
 origins = [
@@ -71,12 +79,13 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 # Include routers
+app.include_router(auth.router, prefix="/api/v1/auth")
 app.include_router(projects.router, prefix="/api/v1")
 app.include_router(risk.router, prefix="/api/v1")
 app.include_router(reality_gap.router, prefix="/api/v1")
 app.include_router(ml_endpoints.router, prefix="/api/v1/ml")
 app.include_router(data_endpoints.router, prefix="/api/v1/data")
-
+app.include_router(evidence.router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

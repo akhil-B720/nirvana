@@ -71,7 +71,7 @@ def load_project_data() -> pd.DataFrame:
             "latitude": p.latitude,
             "longitude": p.longitude,
             "sanction_amount": float(p.sanction_amount or 0),
-        }]
+        } for p in projects]
         df = pd.DataFrame(rows)
         logger.info(f"Loaded {len(df)} projects for similarity analysis")
         return df

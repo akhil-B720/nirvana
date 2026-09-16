@@ -47,5 +47,8 @@ async def get_project_risk(project_id: str, db: AsyncSession = Depends(get_db)):
     # Compute fusion
     risk_result = risk_engine.compute(signals)
     
+    # Save the risk result to the database
+    risk_engine.save_to_db(risk_result, db)
+    
     return risk_result
 

@@ -1,4 +1,4 @@
-export const API_BASE = 'http://localhost:8000/api/v1';
+export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export async function fetchProjects() {
   const res = await fetch(`${API_BASE}/projects/?limit=50`);
@@ -27,5 +27,16 @@ export async function fetchRealityGap(id: string) {
 export async function fetchDigitalTwin(id: string) {
   const res = await fetch(`${API_BASE}/projects/${id}/digital-twin`);
   if (!res.ok) throw new Error('Failed to fetch digital twin');
+  return res.json();
+}
+export async function fetchProjectTimeline(id: string) {
+  const res = await fetch(`${API_BASE}/projects/${id}/timeline`);
+  if (!res.ok) throw new Error('Failed to fetch timeline');
+  return res.json();
+}
+
+export async function fetchProjectRecommendations(id: string) {
+  const res = await fetch(`${API_BASE}/projects/${id}/recommendations`);
+  if (!res.ok) throw new Error('Failed to fetch recommendations');
   return res.json();
 }

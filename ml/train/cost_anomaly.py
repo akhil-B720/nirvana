@@ -67,6 +67,10 @@ def load_training_data() -> pd.DataFrame:
             })
 
         df = pd.DataFrame(rows)
+        if df.empty:
+            logger.info("Loaded 0 projects for training.")
+            return df
+
         logger.info(f"Loaded {len(df)} projects for training "
                    f"({(df['data_availability_status'] == 'SYNTHETIC').sum()} synthetic)")
         return df

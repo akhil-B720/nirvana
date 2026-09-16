@@ -93,6 +93,9 @@ def load_training_data() -> pd.DataFrame:
             })
 
         df = pd.DataFrame(rows)
+        if df.empty:
+            logger.info("Loaded 0 labeled projects.")
+            return df
         logger.info(f"Loaded {len(df)} labeled projects "
                    f"({df['is_delayed'].sum()} delayed, "
                    f"{len(df)-df['is_delayed'].sum()} on-track)")
@@ -217,19 +220,18 @@ def train():
     logger.info("✅ Delay prediction model training complete.")
 
 
+def baseline_predict_proba(elapsed_ratio, reported_progress):
+    if elapsed_ratio > 1.3:
+        return min(0.95, 0.5 + (elapsed_ratio - 1.0) * 0.3)
+    elif elapsed_ratio > 1.0 and reported_progress < 80:
+        return 0.7
+    elif elapsed_ratio > 0.9 and reported_progress < 50:
+        return 0.4
+    return 0.1
+
 def train_baseline_model(df: pd.DataFrame):
     """Statistical baseline when training data is insufficient."""
     logger.info("Training statistical baseline model")
-
-    # Baseline: delayed if elapsed_ratio > 1.1 and progress < 80%
-    def baseline_predict_proba(elapsed_ratio, reported_progress):
-        if elapsed_ratio > 1.3:
-            return min(0.95, 0.5 + (elapsed_ratio - 1.0) * 0.3)
-        elif elapsed_ratio > 1.0 and reported_progress < 80:
-            return 0.7
-        elif elapsed_ratio > 0.9 and reported_progress < 50:
-            return 0.4
-        return 0.1
 
     version = f"baseline_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     artifacts = {

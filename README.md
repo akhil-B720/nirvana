@@ -69,7 +69,6 @@ python -m data_pipeline.run
 python -m ml.train.cost_anomaly
 python -m ml.train.delay_model
 python -m ml.train.similarity_model
-python -m ml.evaluate
 ```
 
 ### 6. Start API server
@@ -88,6 +87,9 @@ npm run dev
 ```bash
 docker compose up
 ```
+
+### 8. Web Deployment (Render / Heroku)
+The backend is configured with a `Procfile` (`web: uvicorn backend.main:app --host 0.0.0.0 --port $PORT`). Note: Do not assume `localhost` in production. Ensure `VITE_API_URL` is set when building the frontend.
 
 ---
 

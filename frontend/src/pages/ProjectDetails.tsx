@@ -1,18 +1,21 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchProjectDetails, fetchProjectRisk, fetchRealityGap, fetchDigitalTwin } from '../lib/api';
+import { fetchProjectDetails, fetchProjectRisk, fetchRealityGap, fetchDigitalTwin, fetchProjectTimeline, fetchProjectRecommendations } from '../lib/api';
 import { formatCurrency } from '../lib/utils';
 import { Card, Badge, Button } from '../components/ui/core';
 import { ArrowLeft, BrainCircuit, Activity, FileText, AlertTriangle, Box } from 'lucide-react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment, Grid, Html } from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Environment, Grid } from '@react-three/drei';
 
 export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
   const [risk, setRisk] = useState<any>(null);
   const [gap, setGap] = useState<any>(null);
-  const [twin, setTwin] = useState<any>(null);
+  const [, setTwin] = useState<any>(null);
+  const [timeline, setTimeline] = useState<any>(null);
+  const [recs, setRecs] = useState<any>(null);
+  const [sliderValue, setSliderValue] = useState<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -21,12 +24,16 @@ export default function ProjectDetails() {
       fetchProjectDetails(id).catch(() => null),
       fetchProjectRisk(id).catch(() => null),
       fetchRealityGap(id).catch(() => null),
-      fetchDigitalTwin(id).catch(() => null) // Mock twin architecture
-    ]).then(([d, r, g, t]) => {
+      fetchDigitalTwin(id).catch(() => null),
+      fetchProjectTimeline(id).catch(() => null),
+      fetchProjectRecommendations(id).catch(() => null),
+    ]).then(([d, r, g, t, tm, rc]) => {
       setData(d);
       setRisk(r);
       setGap(g);
       setTwin(t);
+      setTimeline(tm);
+      setRecs(rc);
     });
   }, [id]);
 
@@ -115,6 +122,23 @@ export default function ProjectDetails() {
               <div className="text-sm text-white/40 italic">Analysis unavailable. Engine warming up...</div>
             )}
           </Card>
+          
+          {/* Recommendations Card */}
+          {recs && recs.recommendations && recs.recommendations.length > 0 && (
+            <Card>
+              <h2 className="text-sm font-bold text-white/50 tracking-widest uppercase mb-4 flex items-center gap-2 border-b border-white/10 pb-2">
+                Verification Recommendations
+              </h2>
+              <div className="space-y-3 text-sm">
+                {recs.recommendations.map((r: any, idx: number) => (
+                  <div key={idx} className="bg-risk-medium/10 p-3 rounded-lg border border-risk-medium/20 text-white/80">
+                    <span className="font-bold text-risk-medium block mb-1">{r.issue}</span>
+                    <span>{r.action}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* MIDDLE/RIGHT COLUMN: Digital Twin & Analytics */}
@@ -127,21 +151,41 @@ export default function ProjectDetails() {
                 <h2 className="text-lg font-bold flex items-center gap-2">
                   <Box size={18} className="text-primary"/> Digital Twin Sandbox
                 </h2>
-                <div className="text-xs font-mono text-white/60">Estimated physical volume based on analytics</div>
+                <div className="text-xs font-mono text-white/60">Type: {data.project_type || 'GENERAL'} | Compare Expected vs Reported</div>
               </div>
               <Badge variant="default" className="backdrop-blur-md bg-black/50">LIVE ARCHITECTURE</Badge>
             </div>
             
+            <div className="absolute bottom-4 left-4 right-4 z-10 bg-black/50 p-3 rounded-lg backdrop-blur-md border border-white/10 flex items-center gap-4">
+              <span className="text-xs font-bold text-white/60 w-24">PROGRESS</span>
+              <input 
+                type="range" 
+                min="0" max="100" 
+                value={sliderValue !== null ? sliderValue : (data.reported_progress || 0)} 
+                onChange={(e) => setSliderValue(Number(e.target.value))}
+                className="flex-1 accent-primary" 
+              />
+              <span className="text-xs font-mono text-primary w-12 text-right">
+                {sliderValue !== null ? sliderValue : (data.reported_progress || 0)}%
+              </span>
+              <Button variant="outline" onClick={() => setSliderValue(null)} className="text-xs py-1 h-auto">
+                RESET
+              </Button>
+            </div>
+
             <div className="flex-1 w-full h-full cursor-move">
               <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
                 <ambientLight intensity={0.5} />
                 <directionalLight position={[10, 10, 5]} intensity={1} />
                 <Environment preset="city" />
                 
-                {/* A generic abstract building to show progress */}
-                <AbstractBuilding progress={data.reported_progress || 0} />
+                <TwinRenderer 
+                    type={data.project_type || 'BUILDING'} 
+                    reportedProgress={sliderValue !== null ? sliderValue : (data.reported_progress || 0)}
+                    expectedProgress={gap?.expected_progress || 100}
+                />
                 
-                <Grid infiniteGrid fadeDistance={20} sectionColor="#1a233a" cellColor="#0b101e" position={[0, -1, 0]} />
+                <Grid infiniteGrid fadeDistance={40} sectionColor="#1a233a" cellColor="#0b101e" position={[0, -1, 0]} />
                 <OrbitControls enablePan={true} enableZoom={true} />
               </Canvas>
             </div>
@@ -183,43 +227,135 @@ export default function ProjectDetails() {
             )}
           </Card>
 
+            {/* Timeline UI */}
+            <Card className="mt-6">
+               <h2 className="text-lg font-bold mb-4 flex items-center gap-2 border-b border-white/10 pb-2">
+                Timeline & Evidence Chain
+              </h2>
+              {timeline && timeline.timeline && timeline.timeline.length > 0 ? (
+                <div className="space-y-4">
+                  {timeline.timeline.map((event: any, idx: number) => (
+                    <div key={idx} className="flex gap-4 border-l-2 border-primary/40 pl-4 py-1">
+                      <div className="text-xs text-white/50 w-24 flex-shrink-0">
+                        {new Date(event.date).toLocaleDateString()}
+                      </div>
+                      <div>
+                        <div className="font-bold text-sm tracking-wide mb-1 text-white/90">
+                           {event.type}
+                        </div>
+                        <div className="text-xs text-white/60 mb-1">{event.description}</div>
+                        <div className="text-[10px] text-white/30 uppercase tracking-widest">{event.source}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-white/40 italic">No historical events tracked.</div>
+              )}
+            </Card>
+
         </div>
       </div>
     </div>
   );
 }
 
-// A highly abstract generic 3D component representing "progress"
-function AbstractBuilding({ progress }: { progress: number }) {
-  const groupRef = useRef<any>(null);
-  
-  useFrame((state) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.2) * 0.1;
-    }
-  });
-
-  // Calculate generic stacked blocks based on % progress (every 20% = 1 visible block)
-  const blocks = 5;
-  const blocksVisible = Math.max(1, Math.ceil((progress / 100) * blocks));
-
+function TwinRenderer({ type, reportedProgress, expectedProgress }: { type: string, reportedProgress: number, expectedProgress: number }) {
+  // We overlay two models: The expected as a transparent wireframe, and the actual as solid
   return (
-    <group ref={groupRef} position={[0, -0.5, 0]}>
-      {Array.from({ length: blocks }).map((_, i) => (
-        <mesh key={i} position={[0, i * 0.8, 0]} castShadow receiveShadow>
-          <boxGeometry args={[3 - i*0.2, 0.7, 3 - i*0.2]} />
-          {i < blocksVisible ? (
-             <meshStandardMaterial color={0x0ea5e9} transparent opacity={0.9} roughness={0.2} metalness={0.8} />
-          ) : (
-             <meshStandardMaterial color={0x334155} transparent opacity={0.2} wireframe />
-          )}
-        </mesh>
-      ))}
-      {/* Central pillar / foundation wire */}
-      <mesh position={[0, blocks*0.4, 0]}>
-        <cylinderGeometry args={[0.2, 0.2, blocks*0.8, 8]} />
-        <meshStandardMaterial color={0xffffff} transparent opacity={0.1} />
-      </mesh>
+    <group position={[0, -0.5, 0]}>
+      {/* Expected model - Ghost wireframe */}
+      {renderModel(type, expectedProgress, true)}
+      {/* Actual progress - Solid model */}
+      {renderModel(type, reportedProgress, false)}
     </group>
+  );
+}
+
+function renderModel(type: string, progress: number, isGhost: boolean) {
+  const norm = progress / 100;
+  
+  if (type === 'ROAD') {
+      const length = 10 * norm;
+      return (
+          <group position={[0, 0, 0]}>
+              <mesh position={[0, 0.1, (10 - length)/2 - 5]} castShadow={!isGhost} receiveShadow={!isGhost}>
+                  <boxGeometry args={[2, 0.2, length]} />
+                  <meshStandardMaterial 
+                      color={isGhost ? 0xffffff : 0x334155} 
+                      wireframe={isGhost} 
+                      transparent={isGhost} 
+                      opacity={isGhost ? 0.2 : 1} 
+                  />
+              </mesh>
+          </group>
+      );
+  }
+  
+  if (type === 'BRIDGE') {
+      const length = 8 * norm;
+      const pillars = Math.floor(length / 2);
+      return (
+          <group position={[0, 0, 0]}>
+              <mesh position={[0, 2, (8 - length)/2 - 4]} castShadow={!isGhost}>
+                  <boxGeometry args={[2, 0.4, length]} />
+                  <meshStandardMaterial color={isGhost ? 0xffffff : 0x0ea5e9} wireframe={isGhost} transparent opacity={isGhost ? 0.2 : 0.9} />
+              </mesh>
+              {Array.from({length: pillars}).map((_, i) => (
+                  <mesh key={`p-${i}`} position={[0, 1, -4 + (i * 2.5)]}>
+                      <cylinderGeometry args={[0.3, 0.4, 2]} />
+                      <meshStandardMaterial color={isGhost ? 0xffffff : 0x64748b} wireframe={isGhost} transparent opacity={isGhost ? 0.1 : 0.9} />
+                  </mesh>
+              ))}
+          </group>
+      );
+  }
+  
+  if (type === 'WATER_TANK') {
+      const height = 3 * norm;
+      return (
+          <group position={[0, 0, 0]}>
+              {/* Pillars full height always if even 10% progress */}
+              {progress > 10 && (
+                <>
+                  <mesh position={[-1, 2, -1]}><cylinderGeometry args={[0.1, 0.1, 4]}/><meshStandardMaterial color={isGhost ? 0xffffff : 0x64748b} wireframe={isGhost} transparent opacity={isGhost ? 0.2 : 1}/></mesh>
+                  <mesh position={[1, 2, -1]}><cylinderGeometry args={[0.1, 0.1, 4]}/><meshStandardMaterial color={isGhost ? 0xffffff : 0x64748b} wireframe={isGhost} transparent opacity={isGhost ? 0.2 : 1}/></mesh>
+                  <mesh position={[-1, 2, 1]}><cylinderGeometry args={[0.1, 0.1, 4]}/><meshStandardMaterial color={isGhost ? 0xffffff : 0x64748b} wireframe={isGhost} transparent opacity={isGhost ? 0.2 : 1}/></mesh>
+                  <mesh position={[1, 2, 1]}><cylinderGeometry args={[0.1, 0.1, 4]}/><meshStandardMaterial color={isGhost ? 0xffffff : 0x64748b} wireframe={isGhost} transparent opacity={isGhost ? 0.2 : 1}/></mesh>
+                </>
+              )}
+              {progress > 30 && (
+                <mesh position={[0, 4 + height/2 - 1.5, 0]} castShadow={!isGhost}>
+                    <cylinderGeometry args={[2, 2, height, 16]} />
+                    <meshStandardMaterial color={isGhost ? 0xffffff : 0x3b82f6} wireframe={isGhost} transparent opacity={isGhost ? 0.2 : 0.9} />
+                </mesh>
+              )}
+          </group>
+      );
+  }
+  
+  // Default: BUILDING
+  const blocks = 5;
+  const blocksVisible = Math.max(1, Math.ceil(norm * blocks));
+  return (
+      <group position={[0, 0, 0]}>
+          {Array.from({ length: isGhost ? blocks : blocksVisible }).map((_, i) => (
+             <mesh key={`b-${i}`} position={[0, i * 0.8, 0]} castShadow={!isGhost} receiveShadow={!isGhost}>
+                 <boxGeometry args={[3 - i*0.2, 0.7, 3 - i*0.2]} />
+                 <meshStandardMaterial 
+                     color={isGhost ? 0xffffff : 0x0ea5e9} 
+                     wireframe={isGhost} 
+                     transparent={isGhost || !isGhost} 
+                     opacity={isGhost ? 0.1 : 0.9} 
+                 />
+             </mesh>
+          ))}
+          {!isGhost && (
+              <mesh position={[0, blocks*0.4, 0]}>
+                 <cylinderGeometry args={[0.2, 0.2, blocks*0.8, 8]} />
+                 <meshStandardMaterial color={0xffffff} transparent opacity={0.1} />
+              </mesh>
+          )}
+      </group>
   );
 }

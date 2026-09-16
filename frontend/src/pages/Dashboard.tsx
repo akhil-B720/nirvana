@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Badge, Button } from '../components/ui/core';
 import { Link } from 'react-router-dom';
 import { fetchProjects } from '../lib/api';

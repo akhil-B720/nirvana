@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Secrets
+.env
+
+# Logs
+*.log
+data_pipeline/logs/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Node dependencies
+node_modules/
+frontend/node_modules/
+
+# Frontend build
+dist/
+frontend/dist/
+
+# TypeScript/Vite generated files
+*.tsbuildinfo
+vite.config.d.ts
+vite.config.js
+
+# IDE
+.vscode/
+.idea/
+
+# Testing/cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ML generated artifacts
+models/
+
+# OS
+.DS_Store
+Thumbs.db
+
+test_out.txt
